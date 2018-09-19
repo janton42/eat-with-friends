@@ -3,6 +3,20 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var mongoose = require('mongoose');
+
+// set up default mongoose connection
+var mongoDB = 'mongodb://10.0.0.1/my_database';
+mongoose.connect(mongoDB);
+
+// tell mongoose to use global promise library
+mongoose.promise = global.promise;
+
+// get default connection
+var db = mongoose.connection;
+
+// bind connection to error event
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
