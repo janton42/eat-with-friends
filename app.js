@@ -6,8 +6,11 @@ var logger = require('morgan');
 var mongoose = require('mongoose');
 
 // set up default mongoose connection
-var mongoDB = 'mongodb://10.0.0.1/my_database';
-mongoose.connect(mongoDB);
+mongoose.connect('mongodb://localhost/testdb', { useNewUrlParser: true }).then(() => {
+console.log("Connected to Database Motherfucker!!");
+}).catch((err) => {
+    console.log("Not Connected to Database ERROR! ", err);
+});
 
 // tell mongoose to use global promise library
 mongoose.promise = global.promise;
