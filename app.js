@@ -1,21 +1,25 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var session = require('express-session');
-var logger = require('morgan');
-var mongoose = require('mongoose');
-var okta = require("@okta/okta-sdk-nodejs");
-var { ExpressOIDC } = require("@okta/oidc-middleware");
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const session = require('express-session');
+const logger = require('morgan');
+const mongoose = require('mongoose');
+const okta = require("@okta/okta-sdk-nodejs");
+const { ExpressOIDC } = require("@okta/oidc-middleware");
+const dashboardRouter = require('./routes/dashboard');
+const publicRouter = require('./routes/public');
+const usersRouter = require("./routes/users");
 
-var app = express();
+const app = express();
 
 // user authentication with Okta
-var oktaClient = new okta.Client({
+const oktaClient = new okta.Client({
   orgUrl: 'https://dev-243898.oktapreview.com',
   token: '00rwcWvnXvMXiPO5iRqtcYF3skUMJdqtpMxad1z-WN'
 });
+
 const oidc = new ExpressOIDC({
-  issuer: "{yourOktaOrgUrl}/oauth2/default",
+  issuer: "https://dev-243898.oktapreview/oauth2/default",
   client_id: '0oagbjmic2bDzcX6V0h7',
   client_secret: 'HVESJVVu-bNSW5iIyn7Tu82lV-HnvqNig4_Bvo6K',
   redirect_uri: 'http://localhost:3000/users/callback',
@@ -31,6 +35,23 @@ const oidc = new ExpressOIDC({
   }
 });
 
+oidc.on('ready', () => {
+  app.listen(3000, () => console.log('app started'));
+});
+
+oidc.on('error', err => {
+  console.log('Womp womp. Here\'s your error: ', err)
+});
+
+// enable sessions
+app.use(session({
+  secret: '87ygjfeiefew3o358uhgbnjhghbgftydhbjkvslgt-oiubhuyegrh',
+  resave: true,
+  saveUninitialized: false
+}));
+// OIDC router for authentication
+app.use(oidc.router);
+
 // set up default mongoose connection
 mongoose.connect('mongodb://localhost/testdb', { useNewUrlParser: true }).then(() => {
 console.log("Connected to Database Motherfucker!!");
@@ -42,14 +63,11 @@ console.log("Connected to Database Motherfucker!!");
 mongoose.promise = global.promise;
 
 // get default connection
-var db = mongoose.connection;
+const db = mongoose.connection;
 
 // bind connection to error event
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-const dashboardRouter = require('./routes/dashboard');
-const publicRouter = require('./routes/public');
-const usersRouter = require("./routes/users");
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -62,18 +80,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', publicRouter);
-app.use('/dashboard', loginRequired, dashboardRouter);
+app.use('/dashboard', dashboardRouter);
 app.use('/users', usersRouter);
 
-// enable sessions
-app.use(session({
-	secret: '87ygjfeiefew3o358uhgbnjhghbgftydhbjkvslgt-oiubhuyegrh',
-	resave: true,
-	saveUninitialized: false
-}));
 
-// OIDC router for authentication
-app.use(oidc.router);
+
 
 // collect user data
 app.use((req, res, next) => {
@@ -90,18 +101,24 @@ app.use((req, res, next) => {
       next(err);
     });
 });
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-function loginRequired(req, res, next) {
-  if (!req.user) {
-    return res.status(401).render("unauthenticated");
-  }
+// middleware to protect numerous routes
+// app.get('/protected', oidc.ensureAuthenticated(), (req, res) => {
+//   res.send(JSON.stringify(req.userinfo));
+// })
 
-  next();
-};
+// function loginRequired(req, res, next) {
+//   if (!req.user) {
+//     return res.status(401).render("unauthenticated");
+//   }
+
+//   next();
+// };
 
 // error handler
 app.use(function(err, req, res, next) {
@@ -114,5 +131,12 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+// oidc.on('ready', () => {
+//   app.listen(3000, () => console.log(`Started!`));
+// });
+
+// oidc.on('error', err => {
+//   console.log('Okta is not working because of this error:', err);
+// });
 
 module.exports = app;
