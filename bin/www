@@ -24,9 +24,9 @@ var server = http.createServer(app);
 /**
  * Listen on provided port, on all network interfaces.
  */
- oidc.on('ready', () => {
-  server.listen(port, () => console.log('app started'));
-});
+//  oidc.on('ready', () => {
+//   server.listen(port, () => console.log('app started'));
+// });
 
 // server.listen(port);
 server.on('error', onError);

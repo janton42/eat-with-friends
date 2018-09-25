@@ -64,14 +64,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', publicRouter);
 app.use('/dashboard', loginRequired, dashboardRouter);
 app.use('/users', usersRouter);
+
 // enable sessions
 app.use(session({
 	secret: '87ygjfeiefew3o358uhgbnjhghbgftydhbjkvslgt-oiubhuyegrh',
 	resave: true,
 	saveUninitialized: false
 }));
+
 // OIDC router for authentication
 app.use(oidc.router);
+
 // collect user data
 app.use((req, res, next) => {
   if (!req.userinfo) {
