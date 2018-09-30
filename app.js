@@ -48,6 +48,7 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var loginRouter = require('./routes/login');
 
 var app = express();
 
@@ -73,6 +74,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/login', loginRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -106,6 +108,11 @@ passport.deserializeUser(function(id, done) {
 
 // passport authentication
 app.post('login',
-  passport.authentication('local', { successRedirect: '/', failureRedirect: '/login' }));
+  passport.authenticate('local', 
+    {
+     successRedirect: '/', //login successfull
+     failureRedirect: '/login',  //login failed
+     falureFlash: true  // failure message
+   }));
 
 module.exports = app;
