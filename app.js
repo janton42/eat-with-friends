@@ -90,6 +90,20 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+// serialize users to a session
+
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+// deserialize users from a session
+
+passport.deserializeUser(function(id, done) {
+  User.findById(id, function(err, user) {
+    done(err, user);
+  });
+});
+
 // passport authentication
 app.post('login')
 
